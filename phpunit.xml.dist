@@ -1,0 +1,24 @@
+<phpunit
+        bootstrap="test-init.php"
+        cacheTokens="true"
+        convertErrorsToExceptions="true"
+        convertNoticesToExceptions="true"
+        convertWarningsToExceptions="true"
+        forceCoversAnnotation="false"
+        mapTestClassNameToCoveredClassName="false"
+        processIsolation="false"
+        stopOnError="false"
+        stopOnFailure="false"
+        stopOnIncomplete="false"
+        stopOnSkipped="false"
+        strict="false"
+        verbose="false"
+        preserveGlobalState="false"
+        colors="true"
+>
+    <testsuites>
+        <testsuite>
+            <directory>test/</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

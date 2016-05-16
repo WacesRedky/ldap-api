@@ -1,12 +1,16 @@
 <?php
 namespace LdapApi;
 
+use Psr\Log\LoggerInterface;
 /**
  * @author: mix
  * @date: 09.05.13
  */
-class Ldap implements UserFinder
+class LdapConnect
 {
+    /**
+     * @var string
+     */
     private $host;
 
     /**
@@ -14,72 +18,48 @@ class Ldap implements UserFinder
      */
     private $dn;
 
+    /**
+     * @var string
+     */
     private $userGroup;
 
-    private $filter;
-
-    private $debug = false;
+    /**
+     * @var LoggerInterface
+     */
+    private $debugLogger = null;
 
     /**
      * @param string $host
      * @param string $dn
      * @param string $userGroup
-     * @param string $filter
-     * @throws Exception
+     * @internal param string $filter
      */
-    public function __construct($host, $dn, $userGroup = "users", $filter = "(uid=*)") {
+    public function __construct($host, $dn, $userGroup = "users") {
         $this->host = $host;
         $this->dn = $dn;
         $this->userGroup = $userGroup;
-        $this->filter = $filter;
     }
 
-    public function enambleDebug(){
-        $this->debug = true;
+    public function enableDebug(LoggerInterface $logger){
+        $this->debugLogger = $logger;
     }
 
-    /**
-     * @throws Exception
-     * @return array
-     */
-    public function getContacts() {
+    public function search($filter){
         $connect = $this->connect();
         $bind = $this->bind($connect);
         if (!$bind) {
-            throw new Exception("Could not bind");
+            throw new Exception("cant bind");
         }
-        $read = \ldap_search($connect, $this->dn, $this->filter);
+        $read = \ldap_search($connect, $this->dn, $filter);
         if (!$read) {
             throw new Exception("Unable to search ldap server");
         }
         $info = \ldap_get_entries($connect, $read);
-        array_shift($info);
-        $out = array();
-        foreach ($info as $user) {
-            if (!isset($user['givenname'][0])) {
-                continue;
-            }
-            if (!isset($user['mail'][0])) {
-                continue;
-            }
-            $login = $user['uid'][0];
-            $mail = $user['mail'][0];
-            $r = array(
-                "login" => $login,
-                "mail" => $mail,
-                "firstname" => $user['givenname'][0],
-                "lastname" => $user['sn'][0],
-
-            );
-            $out[$login] = $r;
-        }
         $this->close($connect);
-
-        return $out;
+        return $info;
     }
 
-    public function checkLogin($login, $password, UserFinder $finder) {
-        $name = $finder->getNameByLogin($login);
+    public function loginUser($name, $password){
         $ldaprdn = 'cn=' . $name . ",ou={$this->userGroup},{$this->dn}";
         $connect = $this->connect();
         $bind = $this->bind($connect, $ldaprdn, $password);
@@ -89,15 +69,6 @@ class Ldap implements UserFinder
         }
 
         return false;
-    }
-
-    public function getNameByLogin($login) {
-        $users = $this->getContacts();
-        if (isset($users[$login])) {
-            return $users[$login]["firstname"] . " " . $users[$login]["lastname"];
-        }
-
-        return null;
     }
 
     private function connect() {
@@ -132,12 +103,13 @@ class Ldap implements UserFinder
         $time1 = microtime(1);
         $result = $f();
         $time2 = microtime(1);
-        if ($this->debug) {
+        if ($this->debugLogger) {
             $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-            echo $trace[1]["function"] . ": " . round($time2 - $time1, 2) . "s\n";
+            $msg = $trace[1]["function"] . ": " . round($time2 - $time1, 2) . "s\n";
             foreach ($trace as $row) {
-                echo $row["file"] . ":" . $row["line"] . " ". $row["class"] . "::" . $row["function"] . "\n";
+                $msg .= $row["file"] . ":" . $row["line"] . " ". $row["class"] . "::" . $row["function"] . "\n";
             }
+            $this->debugLogger->notice($msg);
         }
 
         return $result;

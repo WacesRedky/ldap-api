@@ -1,18 +1,30 @@
 {
-    "name": "mipxtx/ldap-api",
-    "type": "library",
-    "description": "simple ldap api to login",
-    "keywords": ["ldap"],
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "Michail Buylov",
-            "email": "mipxtx@gmail.com"
-        }
-    ],
-    "autoload": {
-        "psr-0": {
-            "LdapApi": ""
-        }
+  "name": "mipxtx/ldap-api",
+  "type": "library",
+  "description": "simple ldap api to login",
+  "keywords": [
+    "ldap"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Michail Buylov",
+      "email": "mipxtx@gmail.com"
     }
+  ],
+  "autoload": {
+    "psr-4": {
+      "LdapApi\\": [
+        "src/",
+        "test/"
+      ]
+    }
+  },
+  "require":{
+    "psr/log": "*"
+  },
+
+  "require-dev": {
+    "phpunit/phpunit": "*"
+  }
 }
