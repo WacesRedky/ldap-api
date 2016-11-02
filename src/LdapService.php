@@ -11,7 +11,7 @@ namespace LdapApi;
 class LdapService
 {
     const ALL_USERS = "(uid=*)";
-    
+
     private $ldap;
 
     public function __construct(LdapConnect $connect) {
@@ -35,34 +35,35 @@ class LdapService
             }
             $login = $user['uid'][0];
             $mail = $user['mail'][0];
+            $id = $user['uidnumber'][0];
             $r = array(
-                "id" => $user['uidnumber'][0],
+                "id" => $id,
                 "login" => $login,
                 "mail" => $mail,
                 "firstname" => $user['givenname'][0],
                 "lastname" => $user['sn'][0],
 
-
             );
-            $out[$login] = $r;
+            $out[$id] = $r;
         }
+
         return $out;
     }
 
     public function checkLogin($login, $password) {
         $name = $this->getNameByLogin($login);
+
         return $this->ldap->loginUser($name, $password);
-
     }
-
 
     public function getNameByLogin($login) {
         $users = $this->getContacts();
-        if (isset($users[$login])) {
-            return $users[$login]["firstname"] . " " . $users[$login]["lastname"];
+        foreach ($users as $user) {
+            if ($user['login'] == $login) {
+                return $user["firstname"] . " " . $user["lastname"];
+            }
         }
 
         return null;
     }
-
 }
