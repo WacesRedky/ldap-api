@@ -11,19 +11,16 @@ namespace LdapApi;
 class ConnectTest extends \PHPUnit_Framework_TestCase
 {
     const HOST = "192.168.2.2";
-
     const DC = "dc=mamba-co,dc=ru";
-
     const LOGIN = "";
     const PASSWORD = "";
     const NAME = "";
 
-    public function getLdap(){
-        return  new LdapConnect(self::HOST, self::DC);
+    public function getLdap() {
+        return new LdapConnect(self::HOST, self::DC);
     }
 
-
-    public function testDebug(){
+    public function testDebug() {
         $logger = new TestLogger();
 
         $ldap = $this->getLdap();
@@ -33,5 +30,4 @@ class ConnectTest extends \PHPUnit_Framework_TestCase
 
         $this->assertTrue($logger->loggerCalled());
     }
-
 }
