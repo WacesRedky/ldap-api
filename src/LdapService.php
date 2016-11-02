@@ -36,10 +36,12 @@ class LdapService
             $login = $user['uid'][0];
             $mail = $user['mail'][0];
             $r = array(
+                "id" => $user['uidnumber'][0],
                 "login" => $login,
                 "mail" => $mail,
                 "firstname" => $user['givenname'][0],
                 "lastname" => $user['sn'][0],
+
 
             );
             $out[$login] = $r;
