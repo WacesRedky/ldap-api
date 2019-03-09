@@ -1,7 +1,9 @@
 <?php
+
 namespace LdapApi;
 
 use Psr\Log\LoggerInterface;
+
 /**
  * @author: mix
  * @date: 09.05.13
@@ -40,26 +42,44 @@ class LdapConnect
         $this->userGroup = $userGroup;
     }
 
-    public function enableDebug(LoggerInterface $logger){
+    public function enableDebug(LoggerInterface $logger) {
         $this->debugLogger = $logger;
     }
 
-    public function search($filter){
+    public function search($filter, $extendedDn = null) {
         $connect = $this->connect();
-        $bind = $this->bind($connect);
+        $bind = $this->bindLocal($connect);
         if (!$bind) {
             throw new Exception("cant bind");
         }
-        $read = \ldap_search($connect, $this->dn, $filter);
+
+        $dn = $this->dn;
+
+        if ($extendedDn) {
+            $dn = $extendedDn . "," . $this->dn;
+        }
+        $read = $this->time(
+            function () use ($connect, $dn, $filter) {
+                return \ldap_search($connect, $dn, $filter);
+            },
+            'search ' . $dn . " / " . $filter
+        );
+
         if (!$read) {
             throw new Exception("Unable to search ldap server");
         }
-        $info = \ldap_get_entries($connect, $read);
+
+        $info = $this->time(
+            function () use ($connect, $read) {
+                return \ldap_get_entries($connect, $read);
+            },
+            'get_entries'
+        );
         $this->close($connect);
         return $info;
     }
 
-    public function loginUser($name, $password){
+    public function loginUser($name, $password) {
         $ldaprdn = 'cn=' . $name . ",ou={$this->userGroup},{$this->dn}";
         $connect = $this->connect();
         $bind = $this->bind($connect, $ldaprdn, $password);
@@ -75,7 +95,8 @@ class LdapConnect
         return $this->time(
             function () {
                 return \ldap_connect("ldap://{$this->host}/");
-            }
+            },
+            'connect to ' . $this->host
         );
     }
 
@@ -83,33 +104,41 @@ class LdapConnect
         return $this->time(
             function () use ($connect) {
                 \ldap_close($connect);
-            }
+            },
+            'close'
         );
     }
 
-    private function bind($connect, $ldaprdn = null, $password = null) {
+    private function bind($connect, $ldaprdn, $password) {
         return $this->time(
             function () use ($connect, $ldaprdn, $password) {
-                if ($ldaprdn === null) {
-                    return \ldap_bind($connect);
-                }
-
                 return @\ldap_bind($connect, $ldaprdn, $password);
-            }
+            },
+            'bind ' . $ldaprdn
         );
     }
 
-    private function time(callable $f) {
+    private function bindLocal($connect) {
+        return $this->time(
+            function () use ($connect) {
+                return \ldap_bind($connect);
+            },
+            'bind local'
+        );
+    }
+
+    private function time(callable $f, string $name) {
+
+        if ($this->debugLogger) {
+            $msg = "$name\n";
+            $this->debugLogger->notice($msg);
+        }
         $time1 = microtime(1);
         $result = $f();
         $time2 = microtime(1);
         if ($this->debugLogger) {
-            $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-            $msg = $trace[1]["function"] . ": " . round($time2 - $time1, 2) . "s\n";
-            foreach ($trace as $row) {
-                $msg .= $row["file"] . ":" . $row["line"] . " ". $row["class"] . "::" . $row["function"] . "\n";
-            }
-            $this->debugLogger->notice($msg);
+            $msg = "$name done in " . round(($time2 - $time1) * 1000, 2) . "ms\n";
+            $this->debugLogger->debug($msg);
         }
 
         return $result;

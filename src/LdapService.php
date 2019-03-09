@@ -10,7 +10,9 @@ namespace LdapApi;
 
 class LdapService
 {
-    const ALL_USERS = "(uid=*)";
+    const ALL_USERS = "uid=*";
+
+    const ALL_MEMBERS = 'memberUid=*';
 
     private $ldap;
 
@@ -65,5 +67,12 @@ class LdapService
         }
 
         return null;
+    }
+
+    public function checkGroup($login, $group) {
+        $info = $this->ldap->search(self::ALL_MEMBERS, "cn={$group},ou=groups");
+
+        return in_array($login, $info[0]['memberuid']);
+
     }
 }
