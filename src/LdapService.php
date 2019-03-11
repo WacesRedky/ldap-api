@@ -73,6 +73,14 @@ class LdapService
         $info = $this->ldap->search(self::ALL_MEMBERS, "cn={$group},ou=groups");
 
         return in_array($login, $info[0]['memberuid']);
+    }
 
+    public function getUserGroups($login) {
+        $info = $this->ldap->search("memberUid={$login}");
+        $out = [];
+        for ($i = 0; $i < $info['count']; $i++) {
+            $out[] = $info[$i]['cn'][0];
+        }
+        return $out;
     }
 }
