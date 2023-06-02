@@ -1,5 +1,5 @@
 {
-  "name": "mipxtx/ldap-api",
+  "name": "wacesredky/ldap-api",
   "type": "library",
   "description": "simple ldap api to login",
   "keywords": [
@@ -10,6 +10,10 @@
     {
       "name": "Michail Buylov",
       "email": "mipxtx@gmail.com"
+    },
+    {
+      "name": "Viacheslav Redkin",
+      "email": "wacesredky@gmail.com"
     }
   ],
   "autoload": {
