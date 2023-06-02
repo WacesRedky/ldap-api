@@ -30,6 +30,8 @@ class LdapConnect
      */
     private $debugLogger = null;
 
+    private $version = 2;
+
     /**
      * @param string $host
      * @param string $dn
@@ -48,6 +50,7 @@ class LdapConnect
 
     public function search($filter, $extendedDn = null) {
         $connect = $this->connect();
+        $this->applyVersion($connect);
         $bind = $this->bindLocal($connect);
         if (!$bind) {
             throw new Exception("cant bind");
@@ -82,6 +85,7 @@ class LdapConnect
     public function loginUser($name, $password) {
         $ldaprdn = 'cn=' . $name . ",ou={$this->userGroup},{$this->dn}";
         $connect = $this->connect();
+        $this->applyVersion($connect);
         $bind = $this->bind($connect, $ldaprdn, $password);
         $this->close($connect);
         if ($bind) {
@@ -98,6 +102,15 @@ class LdapConnect
             },
             'connect to ' . $this->host
         );
+    }
+
+    public function setVersion(int $version)
+    {
+        $this->version = $version;
+    }
+
+    private function applyVersion($connect) {
+        return \ldap_set_option($connect, LDAP_OPT_PROTOCOL_VERSION, $this->version);
     }
 
     private function close($connect) {
